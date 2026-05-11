@@ -1,104 +1,691 @@
 {
-  "version": "0.1.0",
-  "name": "prediction_market",
+  "address": "6Cxu21rFFR6c9f9aYciBimCSD1vA6k1aa9bE64HG5rLF",
+  "metadata": {
+    "name": "prediction_market",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
   "instructions": [
     {
-      "name": "initializePlatform",
+      "name": "claim_winnings",
+      "discriminator": [
+        161,
+        215,
+        24,
+        59,
+        14,
+        236,
+        242,
+        221
+      ],
       "accounts": [
-        { "name": "admin", "isMut": true, "isSigner": true },
-        { "name": "platformFeeWallet", "isMut": false, "isSigner": false },
-        { "name": "config", "isMut": true, "isSigner": false },
-        { "name": "systemProgram", "isMut": false, "isSigner": false }
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        }
       ],
       "args": []
     },
     {
-      "name": "createMarket",
+      "name": "create_market",
+      "discriminator": [
+        103,
+        226,
+        97,
+        235,
+        200,
+        188,
+        251,
+        254
+      ],
       "accounts": [
-        { "name": "creator", "isMut": true, "isSigner": true },
-        { "name": "config", "isMut": true, "isSigner": false },
-        { "name": "market", "isMut": true, "isSigner": false },
-        { "name": "escrow", "isMut": false, "isSigner": false },
-        { "name": "systemProgram", "isMut": false, "isSigner": false }
+        {
+          "name": "creator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  109,
+                  97,
+                  114,
+                  107,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "creator"
+              },
+              {
+                "kind": "account",
+                "path": "config.market_counter",
+                "account": "Config"
+              }
+            ]
+          }
+        },
+        {
+          "name": "escrow",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
       ],
       "args": [
-        { "name": "streamerSteamId", "type": "string" },
-        { "name": "achievementId", "type": "string" },
-        { "name": "achievementName", "type": "string" },
-        { "name": "achievementDescription", "type": "string" },
-        { "name": "deadline", "type": "i64" },
-        { "name": "streamerFeeRecipient", "type": "publicKey" }
+        {
+          "name": "streamer_steam_id",
+          "type": "string"
+        },
+        {
+          "name": "achievement_id",
+          "type": "string"
+        },
+        {
+          "name": "achievement_name",
+          "type": "string"
+        },
+        {
+          "name": "achievement_description",
+          "type": "string"
+        },
+        {
+          "name": "deadline",
+          "type": "i64"
+        },
+        {
+          "name": "streamer_fee_recipient",
+          "type": "pubkey"
+        }
       ]
     },
     {
-      "name": "placeBet",
-      "accounts": [
-        { "name": "user", "isMut": true, "isSigner": true },
-        { "name": "market", "isMut": true, "isSigner": false },
-        { "name": "escrow", "isMut": true, "isSigner": false },
-        { "name": "bet", "isMut": true, "isSigner": false },
-        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      "name": "initialize_platform",
+      "discriminator": [
+        119,
+        201,
+        101,
+        45,
+        75,
+        122,
+        89,
+        3
       ],
-      "args": [
-        { "name": "side", "type": { "defined": "Side" } },
-        { "name": "amount", "type": "u64" }
-      ]
-    },
-    {
-      "name": "resolveMarket",
       "accounts": [
-        { "name": "oracle", "isMut": false, "isSigner": true },
-        { "name": "config", "isMut": false, "isSigner": false },
-        { "name": "market", "isMut": true, "isSigner": false },
-        { "name": "escrow", "isMut": true, "isSigner": false },
-        { "name": "platformFeeWallet", "isMut": true, "isSigner": false },
-        { "name": "streamerFeeWallet", "isMut": true, "isSigner": false }
-      ],
-      "args": [
-        { "name": "outcome", "type": { "defined": "Side" } }
-      ]
-    },
-    {
-      "name": "claimWinnings",
-      "accounts": [
-        { "name": "user", "isMut": true, "isSigner": true },
-        { "name": "market", "isMut": false, "isSigner": false },
-        { "name": "escrow", "isMut": true, "isSigner": false },
-        { "name": "bet", "isMut": true, "isSigner": false }
+        {
+          "name": "admin",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "platform_fee_wallet"
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
       ],
       "args": []
     },
     {
-      "name": "updateAdmin",
+      "name": "place_bet",
+      "discriminator": [
+        222,
+        62,
+        67,
+        220,
+        63,
+        166,
+        126,
+        33
+      ],
       "accounts": [
-        { "name": "admin", "isMut": false, "isSigner": true },
-        { "name": "config", "isMut": true, "isSigner": false }
+        {
+          "name": "user",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "bet",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  101,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              },
+              {
+                "kind": "account",
+                "path": "user"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
       ],
       "args": [
-        { "name": "newAdmin", "type": "publicKey" }
+        {
+          "name": "side",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        },
+        {
+          "name": "amount",
+          "type": "u64"
+        }
       ]
     },
     {
-      "name": "updatePlatformFeeWallet",
+      "name": "resolve_market",
+      "discriminator": [
+        155,
+        23,
+        80,
+        173,
+        46,
+        74,
+        23,
+        239
+      ],
       "accounts": [
-        { "name": "admin", "isMut": false, "isSigner": true },
-        { "name": "config", "isMut": true, "isSigner": false }
+        {
+          "name": "oracle",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "market",
+          "writable": true
+        },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  115,
+                  99,
+                  114,
+                  111,
+                  119
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "market"
+              }
+            ]
+          }
+        },
+        {
+          "name": "platform_fee_wallet",
+          "writable": true
+        },
+        {
+          "name": "streamer_fee_wallet",
+          "writable": true
+        }
       ],
       "args": [
-        { "name": "newWallet", "type": "publicKey" }
+        {
+          "name": "outcome",
+          "type": {
+            "defined": {
+              "name": "Side"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "update_admin",
+      "discriminator": [
+        161,
+        176,
+        40,
+        213,
+        60,
+        184,
+        179,
+        228
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_admin",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "update_platform_fee_wallet",
+      "discriminator": [
+        135,
+        108,
+        214,
+        52,
+        224,
+        155,
+        54,
+        136
+      ],
+      "accounts": [
+        {
+          "name": "admin",
+          "signer": true
+        },
+        {
+          "name": "config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  111,
+                  110,
+                  102,
+                  105,
+                  103
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_wallet",
+          "type": "pubkey"
+        }
       ]
     }
   ],
   "accounts": [
     {
+      "name": "Bet",
+      "discriminator": [
+        147,
+        23,
+        35,
+        59,
+        15,
+        75,
+        155,
+        32
+      ]
+    },
+    {
+      "name": "Config",
+      "discriminator": [
+        155,
+        12,
+        170,
+        224,
+        30,
+        250,
+        204,
+        130
+      ]
+    },
+    {
+      "name": "Market",
+      "discriminator": [
+        219,
+        190,
+        213,
+        55,
+        0,
+        227,
+        198,
+        154
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "InvalidDeadline",
+      "msg": "Invalid deadline"
+    },
+    {
+      "code": 6001,
+      "name": "SteamIdTooLong",
+      "msg": "Steam ID too long"
+    },
+    {
+      "code": 6002,
+      "name": "AchievementIdTooLong",
+      "msg": "Achievement ID too long"
+    },
+    {
+      "code": 6003,
+      "name": "NameTooLong",
+      "msg": "Name too long"
+    },
+    {
+      "code": 6004,
+      "name": "InvalidAmount",
+      "msg": "Invalid amount"
+    },
+    {
+      "code": 6005,
+      "name": "MarketAlreadyResolved",
+      "msg": "Market already resolved"
+    },
+    {
+      "code": 6006,
+      "name": "MarketExpired",
+      "msg": "Market expired"
+    },
+    {
+      "code": 6007,
+      "name": "UnauthorizedOracle",
+      "msg": "Unauthorized oracle"
+    },
+    {
+      "code": 6008,
+      "name": "DeadlineNotReached",
+      "msg": "Deadline not reached"
+    },
+    {
+      "code": 6009,
+      "name": "MarketNotResolved",
+      "msg": "Market not resolved"
+    },
+    {
+      "code": 6010,
+      "name": "AlreadyClaimed",
+      "msg": "Already claimed"
+    },
+    {
+      "code": 6011,
+      "name": "NotAWinner",
+      "msg": "Not a winner"
+    },
+    {
+      "code": 6012,
+      "name": "NoWinners",
+      "msg": "No winners"
+    },
+    {
+      "code": 6013,
+      "name": "NoWinnings",
+      "msg": "No winnings"
+    },
+    {
+      "code": 6014,
+      "name": "InsufficientEscrow",
+      "msg": "Insufficient escrow"
+    },
+    {
+      "code": 6015,
+      "name": "Unauthorized",
+      "msg": "Unauthorized"
+    }
+  ],
+  "types": [
+    {
+      "name": "Bet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "user",
+            "type": "pubkey"
+          },
+          {
+            "name": "market",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "Side"
+              }
+            }
+          },
+          {
+            "name": "claimed",
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
       "name": "Config",
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "admin", "type": "publicKey" },
-          { "name": "platformFeeWallet", "type": "publicKey" },
-          { "name": "marketCounter", "type": "u64" },
-          { "name": "bump", "type": "u8" }
+          {
+            "name": "admin",
+            "type": "pubkey"
+          },
+          {
+            "name": "platform_fee_wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_counter",
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
         ]
       }
     },
@@ -107,66 +694,84 @@
       "type": {
         "kind": "struct",
         "fields": [
-          { "name": "creator", "type": "publicKey" },
-          { "name": "marketId", "type": "u64" },
-          { "name": "streamerSteamId", "type": "string" },
-          { "name": "achievementId", "type": "string" },
-          { "name": "achievementName", "type": "string" },
-          { "name": "achievementDescription", "type": "string" },
-          { "name": "deadline", "type": "i64" },
-          { "name": "resolved", "type": "bool" },
-          { "name": "outcome", "type": { "option": { "defined": "Side" } } },
-          { "name": "totalYes", "type": "u64" },
-          { "name": "totalNo", "type": "u64" },
-          { "name": "escrowBump", "type": "u8" },
-          { "name": "streamerFeeRecipient", "type": "publicKey" },
-          { "name": "bump", "type": "u8" }
+          {
+            "name": "creator",
+            "type": "pubkey"
+          },
+          {
+            "name": "market_id",
+            "type": "u64"
+          },
+          {
+            "name": "streamer_steam_id",
+            "type": "string"
+          },
+          {
+            "name": "achievement_id",
+            "type": "string"
+          },
+          {
+            "name": "achievement_name",
+            "type": "string"
+          },
+          {
+            "name": "achievement_description",
+            "type": "string"
+          },
+          {
+            "name": "deadline",
+            "type": "i64"
+          },
+          {
+            "name": "resolved",
+            "type": "bool"
+          },
+          {
+            "name": "outcome",
+            "type": {
+              "option": {
+                "defined": {
+                  "name": "Side"
+                }
+              }
+            }
+          },
+          {
+            "name": "total_yes",
+            "type": "u64"
+          },
+          {
+            "name": "total_no",
+            "type": "u64"
+          },
+          {
+            "name": "escrow_bump",
+            "type": "u8"
+          },
+          {
+            "name": "streamer_fee_recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
         ]
       }
     },
-    {
-      "name": "Bet",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          { "name": "user", "type": "publicKey" },
-          { "name": "market", "type": "publicKey" },
-          { "name": "amount", "type": "u64" },
-          { "name": "side", "type": { "defined": "Side" } },
-          { "name": "claimed", "type": "bool" },
-          { "name": "bump", "type": "u8" }
-        ]
-      }
-    }
-  ],
-  "types": [
     {
       "name": "Side",
       "type": {
         "kind": "enum",
         "variants": [
-          { "name": "Yes" },
-          { "name": "No" }
+          {
+            "name": "Yes"
+          },
+          {
+            "name": "No"
+          }
         ]
       }
     }
-  ],
-  "errors": [
-    { "code": 6000, "name": "InvalidDeadline", "msg": "Invalid deadline" },
-    { "code": 6001, "name": "SteamIdTooLong", "msg": "Steam ID too long" },
-    { "code": 6002, "name": "AchievementIdTooLong", "msg": "Achievement ID too long" },
-    { "code": 6003, "name": "NameTooLong", "msg": "Name too long" },
-    { "code": 6004, "name": "InvalidAmount", "msg": "Invalid amount" },
-    { "code": 6005, "name": "MarketAlreadyResolved", "msg": "Market already resolved" },
-    { "code": 6006, "name": "MarketExpired", "msg": "Market expired" },
-    { "code": 6007, "name": "UnauthorizedOracle", "msg": "Unauthorized oracle" },
-    { "code": 6008, "name": "DeadlineNotReached", "msg": "Deadline not reached" },
-    { "code": 6009, "name": "MarketNotResolved", "msg": "Market not resolved" },
-    { "code": 6010, "name": "AlreadyClaimed", "msg": "Already claimed" },
-    { "code": 6011, "name": "NotAWinner", "msg": "Not a winner" },
-    { "code": 6012, "name": "NoWinners", "msg": "No winners" },
-    { "code": 6013, "name": "NoWinnings", "msg": "No winnings" },
-    { "code": 6014, "name": "InsufficientEscrow", "msg": "Insufficient escrow" },
-    { "code": 6015, "name": "Unauthorized", "msg": "Unauthorized" }
   ]
 }

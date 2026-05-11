@@ -21,9 +21,9 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GameMarkets — Steam Achievement Prediction Markets",
+  title: "GG ggodd — Steam Achievement Prediction Markets",
   description:
-    "Bet on whether streamers will unlock Steam achievements. Solana-powered prediction markets.",
+    "Bet SOL on whether streamers will unlock Steam achievements. Live odds. Instant settlement. Powered by Solana.",
 };
 
 export default function RootLayout({
@@ -34,6 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       className={`${teko.variable} ${sora.variable} ${jetbrainsMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-[var(--bg)] text-[var(--text)] font-body">

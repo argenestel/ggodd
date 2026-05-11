@@ -26,7 +26,7 @@ export function SectionHeader({
       initial={reduce ? false : { opacity: 0, y: 10 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.8 }}
-      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.45, ease: "easeOut" as const }}
     >
       <div className="h-px w-6 bg-[var(--accent)]/60" />
       <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.2em] text-[var(--accent)]">

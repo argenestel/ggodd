@@ -1,8 +1,9 @@
 import { Connection, clusterApiUrl, PublicKey, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { AnchorProvider, Program, web3, BN } from "@coral-xyz/anchor";
+import { AnchorProvider, Program, BN } from "@coral-xyz/anchor";
 import type { PredictionMarket } from "./idl";
+import idl from "./idl.json";
 
-export const PROGRAM_ID = new PublicKey("CHgzaLKX9nDkJ6E6tmnjqYMAjzr5FwAn8pWNE2zC7TV2");
+export const PROGRAM_ID = new PublicKey("6Cxu21rFFR6c9f9aYciBimCSD1vA6k1aa9bE64HG5rLF");
 export const NETWORK = process.env.NEXT_PUBLIC_SOLANA_NETWORK || "devnet";
 
 export function getConnection(): Connection {
@@ -16,9 +17,7 @@ export function getConnection(): Connection {
 }
 
 export function getProgram(provider: AnchorProvider): Program<PredictionMarket> {
-  // Dynamic import IDL
-  const idl = require("./idl.json");
-  return new Program(idl, provider) as Program<PredictionMarket>;
+  return new Program({ ...idl, address: PROGRAM_ID.toBase58() }, provider) as Program<PredictionMarket>;
 }
 
 export function lamportsToSol(lamports: number | BN): number {

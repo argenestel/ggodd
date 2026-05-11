@@ -27,7 +27,7 @@ export function TerminalBlock({
       initial={reduce ? false : { opacity: 0, y: 20 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ duration: 0.6, ease: "easeOut" as const }}
     >
       {/* Terminal header */}
       <div className="flex items-center gap-2 border-b border-[var(--border)] bg-[var(--surface)]/60 px-4 py-3">

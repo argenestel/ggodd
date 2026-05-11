@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_lang::system_program;
 
-declare_id!("CHgzaLKX9nDkJ6E6tmnjqYMAjzr5FwAn8pWNE2zC7TV2");
+declare_id!("6Cxu21rFFR6c9f9aYciBimCSD1vA6k1aa9bE64HG5rLF");
 
 pub const FEE_BPS: u16 = 300;
 pub const PLATFORM_SHARE_BPS: u16 = 150;

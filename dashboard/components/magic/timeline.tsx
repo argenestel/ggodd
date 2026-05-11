@@ -33,7 +33,7 @@ function TimelineItem({ phase, detail, index, total, status = "upcoming" }: Time
       initial={reduce ? false : { opacity: 0, x: -20 }}
       whileInView={reduce ? undefined : { opacity: 1, x: 0 }}
       viewport={{ once: true, amount: 0.5 }}
-      transition={{ delay: index * 0.12, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ delay: index * 0.12, duration: 0.5, ease: "easeOut" as const }}
     >
       {/* Timeline line and node */}
       <div className="flex flex-col items-center">

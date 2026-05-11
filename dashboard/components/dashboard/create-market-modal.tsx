@@ -68,6 +68,8 @@ export function CreateMarketModal({ onClose, onCreated }: Props) {
           marketAddress: mockMarketAddress,
           streamerSteamId: selectedStreamer.steamid,
           streamerName: selectedStreamer.personaname,
+          gameName: "Counter-Strike 2",
+          gameAppId: 730,
           achievementId: selectedAchievement.name,
           achievementName: selectedAchievement.displayName,
           achievementDescription: selectedAchievement.description,

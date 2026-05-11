@@ -33,7 +33,7 @@ export function ModuleCard({
       initial={reduce ? false : { opacity: 0, y: 16 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
-      transition={{ delay, duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ delay, duration: 0.45, ease: "easeOut" as const }}
     >
       <div className="flex items-start justify-between">
         <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border border-[var(--border)] bg-[var(--bg-elevated)] text-[var(--accent)] transition-colors group-hover:border-[var(--accent)]/20">

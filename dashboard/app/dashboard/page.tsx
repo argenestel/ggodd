@@ -13,6 +13,8 @@ interface Market {
   creator_steam_id: string;
   streamer_steam_id: string;
   streamer_name: string | null;
+  game_name: string | null;
+  game_app_id: number | null;
   achievement_id: string;
   achievement_name: string;
   achievement_description: string | null;
@@ -37,7 +39,7 @@ const container = {
 
 const item = {
   hidden: { opacity: 0, y: 20 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } },
 };
 
 export default function DashboardPage() {
@@ -54,10 +56,15 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const res = await fetch("/api/markets");
+      if (!res.ok) {
+        setMarkets([]);
+        return;
+      }
       const data = await res.json();
       setMarkets(data.markets || []);
     } catch (e) {
       console.error(e);
+      setMarkets([]);
     } finally {
       setLoading(false);
     }

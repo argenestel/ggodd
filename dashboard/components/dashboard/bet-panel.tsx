@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { useSolanaWallet } from "@/components/wallet/wallet-provider";
 import { Loader2, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { AnchorProvider, BN } from "@coral-xyz/anchor";
+import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { findBetPda, findEscrowPda, getConnection, getProgram, solToLamports } from "@/lib/solana";
 
 interface Props {
   marketAddress: string;
@@ -10,7 +13,7 @@ interface Props {
 }
 
 export function BetPanel({ marketAddress, onBetPlaced }: Props) {
-  const { publicKey, connected } = useSolanaWallet();
+  const { publicKey, connected, signTransaction, signAllTransactions } = useSolanaWallet();
   const [side, setSide] = useState<"yes" | "no">("yes");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,9 +36,44 @@ export function BetPanel({ marketAddress, onBetPlaced }: Props) {
     setSuccess("");
 
     try {
-      // For MVP, mock the on-chain transaction
-      // In production, this would build and send the Anchor placeBet instruction
-      await new Promise((r) => setTimeout(r, 1500));
+      const connection = getConnection();
+      const userPk = new PublicKey(publicKey);
+      const marketPk = new PublicKey(marketAddress);
+      const [escrowPda] = findEscrowPda(marketPk);
+      const [betPda] = findBetPda(marketPk, userPk);
+
+      const walletAdapter = {
+        publicKey: userPk,
+        signTransaction,
+        signAllTransactions,
+      } as any;
+
+      const provider = new AnchorProvider(connection, walletAdapter, { commitment: "confirmed" });
+      const program = getProgram(provider);
+
+      const sideArg = side === "yes" ? { yes: {} } : { no: {} };
+      const amountLamports = new BN(solToLamports(solAmount));
+
+      const ix = await (program as any).methods
+        .placeBet(sideArg, amountLamports)
+        .accounts({
+          user: userPk,
+          market: marketPk,
+          escrow: escrowPda,
+          bet: betPda,
+          systemProgram: SystemProgram.programId,
+        })
+        .instruction();
+
+      const tx = new Transaction().add(ix);
+      tx.feePayer = userPk;
+      const bh = await connection.getLatestBlockhash("confirmed");
+      tx.recentBlockhash = bh.blockhash;
+      const signed = await signTransaction(tx);
+      const txSignature = await connection.sendRawTransaction(signed.serialize(), {
+        preflightCommitment: "confirmed",
+      });
+      await connection.confirmTransaction({ signature: txSignature, ...bh }, "confirmed");
 
       const res = await fetch("/api/bets", {
         method: "POST",
@@ -44,7 +82,7 @@ export function BetPanel({ marketAddress, onBetPlaced }: Props) {
           marketAddress,
           side,
           amountSol: solAmount,
-          txSignature: `mock_tx_${Date.now()}`,
+          txSignature,
         }),
       });
 

@@ -19,7 +19,7 @@ export function StatCard({ value, label, icon, delay = 0 }: StatCardProps) {
       initial={reduce ? false : { opacity: 0, y: 20 }}
       whileInView={reduce ? undefined : { opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.5 }}
-      transition={{ delay, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      transition={{ delay, duration: 0.5, ease: "easeOut" as const }}
       whileHover={reduce ? undefined : { y: -3 }}
     >
       <div className="flex items-start justify-between">

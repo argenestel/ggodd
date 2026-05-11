@@ -119,11 +119,7 @@ export async function searchSteamUsers(query: string): Promise<SteamProfile[]> {
 
 export async function getOwnedGames(steamId: string): Promise<SteamGame[]> {
   if (!STEAM_API_KEY) {
-    return [
-      { appid: 730, name: "Counter-Strike 2", playtime_forever: 12050, img_icon_url: "" },
-      { appid: 570, name: "Dota 2", playtime_forever: 8000, img_icon_url: "" },
-      { appid: 440, name: "Team Fortress 2", playtime_forever: 5000, img_icon_url: "" },
-    ];
+    return [];
   }
 
   const url = `https://api.steampowered.com/IPlayerService/GetOwnedGames/v1/?key=${STEAM_API_KEY}&steamid=${steamId}&include_appinfo=1&include_played_free_games=1`;
@@ -149,11 +145,7 @@ export async function getPlayerAchievements(
   appId: number
 ): Promise<SteamAchievement[]> {
   if (!STEAM_API_KEY) {
-    return [
-      { name: "win_100_matches", displayName: "Centurion", description: "Win 100 competitive matches", icon: "", icongray: "", achieved: 0 },
-      { name: "knife_kill_50", displayName: "Sharpshooter", description: "Get 50 knife kills", icon: "", icongray: "", achieved: 0 },
-      { name: "mvp_50", displayName: "MVP", description: "Earn MVP 50 times", icon: "", icongray: "", achieved: 1, unlocktime: Date.now() / 1000 - 86400 },
-    ];
+    return [];
   }
 
   const url = `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v1/?key=${STEAM_API_KEY}&steamid=${steamId}&appid=${appId}`;
@@ -174,11 +166,7 @@ export async function getPlayerAchievements(
 
 export async function getGameSchema(appId: number): Promise<SteamAchievementSchema[]> {
   if (!STEAM_API_KEY) {
-    return [
-      { name: "win_100_matches", displayName: "Centurion", description: "Win 100 competitive matches", icon: "", icongray: "", hidden: 0 },
-      { name: "knife_kill_50", displayName: "Sharpshooter", description: "Get 50 knife kills", icon: "", icongray: "", hidden: 0 },
-      { name: "mvp_50", displayName: "MVP", description: "Earn MVP 50 times", icon: "", icongray: "", hidden: 0 },
-    ];
+    return [];
   }
 
   const url = `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${STEAM_API_KEY}&appid=${appId}`;

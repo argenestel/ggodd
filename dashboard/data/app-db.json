@@ -1,0 +1,20 @@
+{
+  "users": [
+    {
+      "steam_id": "76561198773139810",
+      "display_name": "silerhepo",
+      "avatar_url": "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
+      "created_at": 1778513134
+    }
+  ],
+  "markets": [],
+  "streamer_profiles": [
+    {
+      "steam_id": "76561198773139810",
+      "display_name": "silerhepo",
+      "wallet_address": null,
+      "updated_at": 1778515160
+    }
+  ],
+  "pending_rewards": []
+}
