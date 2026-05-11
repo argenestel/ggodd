@@ -1,0 +1,172 @@
+{
+  "version": "0.1.0",
+  "name": "prediction_market",
+  "instructions": [
+    {
+      "name": "initializePlatform",
+      "accounts": [
+        { "name": "admin", "isMut": true, "isSigner": true },
+        { "name": "platformFeeWallet", "isMut": false, "isSigner": false },
+        { "name": "config", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": []
+    },
+    {
+      "name": "createMarket",
+      "accounts": [
+        { "name": "creator", "isMut": true, "isSigner": true },
+        { "name": "config", "isMut": true, "isSigner": false },
+        { "name": "market", "isMut": true, "isSigner": false },
+        { "name": "escrow", "isMut": false, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "streamerSteamId", "type": "string" },
+        { "name": "achievementId", "type": "string" },
+        { "name": "achievementName", "type": "string" },
+        { "name": "achievementDescription", "type": "string" },
+        { "name": "deadline", "type": "i64" },
+        { "name": "streamerFeeRecipient", "type": "publicKey" }
+      ]
+    },
+    {
+      "name": "placeBet",
+      "accounts": [
+        { "name": "user", "isMut": true, "isSigner": true },
+        { "name": "market", "isMut": true, "isSigner": false },
+        { "name": "escrow", "isMut": true, "isSigner": false },
+        { "name": "bet", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "side", "type": { "defined": "Side" } },
+        { "name": "amount", "type": "u64" }
+      ]
+    },
+    {
+      "name": "resolveMarket",
+      "accounts": [
+        { "name": "oracle", "isMut": false, "isSigner": true },
+        { "name": "config", "isMut": false, "isSigner": false },
+        { "name": "market", "isMut": true, "isSigner": false },
+        { "name": "escrow", "isMut": true, "isSigner": false },
+        { "name": "platformFeeWallet", "isMut": true, "isSigner": false },
+        { "name": "streamerFeeWallet", "isMut": true, "isSigner": false }
+      ],
+      "args": [
+        { "name": "outcome", "type": { "defined": "Side" } }
+      ]
+    },
+    {
+      "name": "claimWinnings",
+      "accounts": [
+        { "name": "user", "isMut": true, "isSigner": true },
+        { "name": "market", "isMut": false, "isSigner": false },
+        { "name": "escrow", "isMut": true, "isSigner": false },
+        { "name": "bet", "isMut": true, "isSigner": false }
+      ],
+      "args": []
+    },
+    {
+      "name": "updateAdmin",
+      "accounts": [
+        { "name": "admin", "isMut": false, "isSigner": true },
+        { "name": "config", "isMut": true, "isSigner": false }
+      ],
+      "args": [
+        { "name": "newAdmin", "type": "publicKey" }
+      ]
+    },
+    {
+      "name": "updatePlatformFeeWallet",
+      "accounts": [
+        { "name": "admin", "isMut": false, "isSigner": true },
+        { "name": "config", "isMut": true, "isSigner": false }
+      ],
+      "args": [
+        { "name": "newWallet", "type": "publicKey" }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Config",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "admin", "type": "publicKey" },
+          { "name": "platformFeeWallet", "type": "publicKey" },
+          { "name": "marketCounter", "type": "u64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "Market",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "creator", "type": "publicKey" },
+          { "name": "marketId", "type": "u64" },
+          { "name": "streamerSteamId", "type": "string" },
+          { "name": "achievementId", "type": "string" },
+          { "name": "achievementName", "type": "string" },
+          { "name": "achievementDescription", "type": "string" },
+          { "name": "deadline", "type": "i64" },
+          { "name": "resolved", "type": "bool" },
+          { "name": "outcome", "type": { "option": { "defined": "Side" } } },
+          { "name": "totalYes", "type": "u64" },
+          { "name": "totalNo", "type": "u64" },
+          { "name": "escrowBump", "type": "u8" },
+          { "name": "streamerFeeRecipient", "type": "publicKey" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "Bet",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "user", "type": "publicKey" },
+          { "name": "market", "type": "publicKey" },
+          { "name": "amount", "type": "u64" },
+          { "name": "side", "type": { "defined": "Side" } },
+          { "name": "claimed", "type": "bool" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "Side",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "Yes" },
+          { "name": "No" }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    { "code": 6000, "name": "InvalidDeadline", "msg": "Invalid deadline" },
+    { "code": 6001, "name": "SteamIdTooLong", "msg": "Steam ID too long" },
+    { "code": 6002, "name": "AchievementIdTooLong", "msg": "Achievement ID too long" },
+    { "code": 6003, "name": "NameTooLong", "msg": "Name too long" },
+    { "code": 6004, "name": "InvalidAmount", "msg": "Invalid amount" },
+    { "code": 6005, "name": "MarketAlreadyResolved", "msg": "Market already resolved" },
+    { "code": 6006, "name": "MarketExpired", "msg": "Market expired" },
+    { "code": 6007, "name": "UnauthorizedOracle", "msg": "Unauthorized oracle" },
+    { "code": 6008, "name": "DeadlineNotReached", "msg": "Deadline not reached" },
+    { "code": 6009, "name": "MarketNotResolved", "msg": "Market not resolved" },
+    { "code": 6010, "name": "AlreadyClaimed", "msg": "Already claimed" },
+    { "code": 6011, "name": "NotAWinner", "msg": "Not a winner" },
+    { "code": 6012, "name": "NoWinners", "msg": "No winners" },
+    { "code": 6013, "name": "NoWinnings", "msg": "No winnings" },
+    { "code": 6014, "name": "InsufficientEscrow", "msg": "Insufficient escrow" },
+    { "code": 6015, "name": "Unauthorized", "msg": "Unauthorized" }
+  ]
+}
