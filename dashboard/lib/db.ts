@@ -24,6 +24,7 @@ type MarketInsert = {
   creator_steam_id: string;
   streamer_steam_id: string;
   streamer_name: string | null;
+  streamer_avatar_url: string | null;
   game_name: string | null;
   game_app_id: number | null;
   achievement_id: string;
@@ -36,6 +37,7 @@ type MarketInsert = {
 
 const OPTIONAL_MARKET_COLUMNS = [
   "streamer_name",
+  "streamer_avatar_url",
   "game_name",
   "game_app_id",
   "achievement_description",

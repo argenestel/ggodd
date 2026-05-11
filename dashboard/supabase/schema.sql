@@ -13,6 +13,7 @@ create table if not exists public.markets (
   creator_steam_id text not null,
   streamer_steam_id text not null,
   streamer_name text,
+  streamer_avatar_url text,
   game_name text,
   game_app_id integer,
   achievement_id text not null,
@@ -27,6 +28,7 @@ create table if not exists public.markets (
 );
 
 alter table public.markets add column if not exists streamer_name text;
+alter table public.markets add column if not exists streamer_avatar_url text;
 alter table public.markets add column if not exists game_name text;
 alter table public.markets add column if not exists game_app_id integer;
 alter table public.markets add column if not exists achievement_description text;

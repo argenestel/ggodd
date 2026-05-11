@@ -3,8 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSolanaWallet } from "@/components/wallet/wallet-provider";
-import { AnchorProvider, BN } from "@coral-xyz/anchor";
-import { LAMPORTS_PER_SOL, PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
+import { BN } from "@coral-xyz/anchor";
 import {
   X,
   Loader2,
@@ -17,8 +16,22 @@ import {
   Search,
   ChevronRight,
 } from "lucide-react";
+import {
+  LAMPORTS_PER_SOL,
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  TransactionInstruction,
+} from "@solana/web3.js";
 import { format, addDays } from "date-fns";
-import { findConfigPda, findEscrowPda, findMarketPda, getConnection, getProgram } from "@/lib/solana";
+import {
+  buildCreateMarketInstructionData,
+  findConfigPda,
+  findEscrowPda,
+  findMarketPda,
+  getConnection,
+  PROGRAM_ID,
+} from "@/lib/solana";
 
 function toBnSafe(value: any, field: string): BN {
   if (BN.isBN(value)) return value;
@@ -81,7 +94,7 @@ const overlayVariants = {
   exit: { opacity: 0 },
 };
 
-const MARKET_ACCOUNT_SPACE = 8 + 526;
+const MARKET_ACCOUNT_SPACE = 8 + 597;
 
 export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
   const { publicKey, connected, signTransaction, signAllTransactions } = useSolanaWallet();
@@ -104,7 +117,10 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
   const [gamesLoading, setGamesLoading] = useState(false);
 
   useEffect(() => {
-    if (preselectedGame) return;
+    if (preselectedGame) {
+      loadAchievements(preselectedGame);
+      return;
+    }
     setGamesLoading(true);
     fetch(`/api/steam/profile/${streamer.steamid}`)
       .then((r) => r.json())
@@ -159,22 +175,13 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
       const connection = getConnection();
       const userPk = new PublicKey(assertDefined(publicKey, "wallet public key"));
 
-      const walletAdapter = {
-        publicKey: userPk,
-        signTransaction,
-        signAllTransactions,
-      } as any;
-
-      const provider = new AnchorProvider(connection, walletAdapter, { commitment: "confirmed" });
-      const program = getProgram(provider);
-
       const [configPda] = findConfigPda();
-      const configAccount = (await (program as any).account.config.fetch(configPda)) as any;
-      const marketCounterRaw = configAccount?.marketCounter ?? configAccount?.market_counter;
-      if (marketCounterRaw === undefined || marketCounterRaw === null) {
-        throw new Error("Config market counter missing. Initialize platform first.");
+      const configAccountInfo = await connection.getAccountInfo(configPda, "confirmed");
+      if (!configAccountInfo) {
+        throw new Error("Config account not found. Initialize platform first.");
       }
-      const marketCounter = toBnSafe(marketCounterRaw, "marketCounter");
+      // Config layout: disc(8) + admin(32) + platform_fee_wallet(32) + market_counter(8) + bump(1)
+      const marketCounter = new BN(configAccountInfo.data.subarray(72, 80), "le");
       const [marketPda] = findMarketPda(userPk, marketCounter);
       const [escrowPda] = findEscrowPda(marketPda);
 
@@ -187,31 +194,26 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
         }
       }
 
-      const accounts = {
-        creator: userPk,
-        config: configPda,
-        market: marketPda,
-        escrow: escrowPda,
-        systemProgram: SystemProgram.programId,
-      };
+      const ixData = buildCreateMarketInstructionData(
+        streamer.steamid,
+        selectedAchievement.name.slice(0, 64),
+        selectedAchievement.displayName.slice(0, 128),
+        (selectedAchievement.description || "").slice(0, 256),
+        deadlineBn,
+        streamerRecipient
+      );
 
-      Object.entries(accounts).forEach(([k, v]) => {
-        if (!v) {
-          throw new Error(`Missing required account: ${k}`);
-        }
+      const ix = new TransactionInstruction({
+        keys: [
+          { pubkey: userPk, isSigner: true, isWritable: true },
+          { pubkey: configPda, isSigner: false, isWritable: true },
+          { pubkey: marketPda, isSigner: false, isWritable: true },
+          { pubkey: escrowPda, isSigner: false, isWritable: false },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        programId: PROGRAM_ID,
+        data: ixData,
       });
-
-      const ix = await (program as any).methods
-        .createMarket(
-          streamer.steamid,
-          selectedAchievement.name,
-          selectedAchievement.displayName.slice(0, 128),
-          (selectedAchievement.description || "").slice(0, 256),
-          deadlineBn,
-          streamerRecipient
-        )
-        .accounts(accounts)
-        .instruction();
 
       const tx = new Transaction().add(ix);
       tx.feePayer = userPk;
@@ -242,6 +244,16 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
       });
       await connection.confirmTransaction({ signature: txSig, ...bh }, "confirmed");
 
+      const txDetails = await connection.getParsedTransaction(txSig, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      if (txDetails?.meta?.err) {
+        throw new Error(
+          `Transaction landed but failed on-chain: ${JSON.stringify(txDetails.meta.err)}`
+        );
+      }
+
       const res = await fetch("/api/markets", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -249,9 +261,10 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
           marketAddress: marketPda.toBase58(),
           streamerSteamId: streamer.steamid,
           streamerName: streamer.personaname,
+          streamerAvatarUrl: streamer.avatarfull || null,
           gameName: selectedGame?.name || null,
           gameAppId: selectedGame?.appid || null,
-          achievementId: selectedAchievement.name,
+          achievementId: selectedAchievement.name.slice(0, 64),
           achievementName: selectedAchievement.displayName,
           achievementDescription: selectedAchievement.description,
           deadline,
@@ -273,12 +286,7 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
         window.location.reload();
       }, 1500);
     } catch (e: any) {
-      const raw = String(e?.message || e || "Failed to create challenge");
-      if (raw.includes("_bn")) {
-        setError("Challenge transaction failed: invalid on-chain account or argument mapping. Reconnect wallet and retry.");
-      } else {
-        setError(raw);
-      }
+      setError(e?.message || "Failed to create challenge");
     } finally {
       setLoading(false);
     }
@@ -553,6 +561,9 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
                           <div className="flex-1">
                             <p className="text-sm font-semibold">{ach.displayName}</p>
                             <p className="text-xs text-[var(--text-secondary)]">{ach.description}</p>
+                            <p className="mt-0.5 font-mono text-[9px] text-[var(--text-dim)]">
+                              Steam ID: {ach.name}
+                            </p>
                           </div>
                         </button>
                       ))}
@@ -580,14 +591,17 @@ export function ChallengeModal({ streamer, preselectedGame, onClose }: Props) {
                           <Trophy className="h-6 w-6 text-[var(--accent)]" />
                         </div>
                       )}
-                      <div className="flex-1">
-                        <p className="font-semibold">{selectedAchievement?.displayName}</p>
-                        <p className="text-xs text-[var(--text-secondary)]">{selectedAchievement?.description}</p>
-                        <div className="mt-2 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
-                          <Gamepad2 className="h-3 w-3" />
-                          {selectedGame?.name}
-                        </div>
-                      </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">{selectedAchievement?.displayName}</p>
+                    <p className="text-xs text-[var(--text-secondary)]">{selectedAchievement?.description}</p>
+                    <p className="mt-1 font-mono text-[10px] text-[var(--text-dim)]">
+                      Steam achievement ID: <span className="text-[var(--accent)]">{selectedAchievement?.name}</span>
+                    </p>
+                    <div className="mt-2 flex items-center gap-2 text-xs text-[var(--text-tertiary)]">
+                      <Gamepad2 className="h-3 w-3" />
+                      {selectedGame?.name}
+                    </div>
+                  </div>
                     </div>
                   </div>
 

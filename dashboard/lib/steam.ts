@@ -193,6 +193,21 @@ export function getGameHeaderUrl(appId: number): string {
   return `https://cdn.cloudflare.steamstatic.com/steam/apps/${appId}/header.jpg`;
 }
 
+/** Steam Store API — no Web API key; used to resolve appid → title when game_name is missing in DB. */
+export async function getSteamStoreAppName(appId: number): Promise<string | null> {
+  if (!appId || !Number.isFinite(appId)) return null;
+  const url = `https://store.steampowered.com/api/appdetails?appids=${appId}&l=english`;
+  try {
+    const res = await fetch(url, { next: { revalidate: 86400 } });
+    const json = await res.json();
+    const entry = json?.[String(appId)];
+    if (!entry?.success || !entry?.data?.name) return null;
+    return String(entry.data.name);
+  } catch {
+    return null;
+  }
+}
+
 export function formatPlaytime(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   if (hours < 1) return `${minutes}m`;

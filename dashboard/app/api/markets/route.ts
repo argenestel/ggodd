@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createPendingReward, getStreamerProfile, insertMarket, listMarkets, upsertStreamerProfile } from "@/lib/db";
 import { verifySessionToken } from "@/lib/auth";
+import { enrichMarketsForDisplay } from "@/lib/market-enrich";
+import { getGameSchema, getSteamStoreAppName } from "@/lib/steam";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
@@ -9,8 +11,9 @@ export async function GET(req: NextRequest) {
   const address = searchParams.get("address");
 
   const markets = await listMarkets({ streamerId, resolved, address });
+  const enriched = await enrichMarketsForDisplay(markets);
 
-  return NextResponse.json({ markets });
+  return NextResponse.json({ markets: enriched });
 }
 
 export async function POST(req: NextRequest) {
@@ -29,6 +32,7 @@ export async function POST(req: NextRequest) {
     marketAddress,
     streamerSteamId,
     streamerName,
+    streamerAvatarUrl,
     gameName,
     gameAppId,
     achievementId,
@@ -53,16 +57,60 @@ export async function POST(req: NextRequest) {
       await upsertStreamerProfile(streamerSteamId, streamerName || known.display_name, streamerWallet);
     }
 
+    const profile = known || (await getStreamerProfile(streamerSteamId));
+    const streamerForRow =
+      (typeof streamerName === "string" && streamerName.trim()) ||
+      (profile?.display_name && String(profile.display_name).trim()) ||
+      null;
+
+    let gameForRow = typeof gameName === "string" && gameName.trim() ? gameName.trim() : null;
+    const appIdNum = gameAppId != null ? Number(gameAppId) : NaN;
+    if (!gameForRow && Number.isFinite(appIdNum) && appIdNum > 0) {
+      gameForRow = await getSteamStoreAppName(appIdNum);
+    }
+
+    let achievementDescForRow =
+      typeof achievementDescription === "string" && achievementDescription.trim()
+        ? achievementDescription.trim()
+        : null;
+    let achievementNameForRow =
+      typeof achievementName === "string" && achievementName.trim()
+        ? achievementName.trim()
+        : achievementId;
+
+    if (Number.isFinite(appIdNum) && appIdNum > 0 && achievementId) {
+      const titleMatchesGame =
+        gameForRow &&
+        achievementNameForRow &&
+        achievementNameForRow.toLowerCase() === gameForRow.toLowerCase();
+      if (!achievementDescForRow || titleMatchesGame) {
+        const schema = await getGameSchema(appIdNum);
+        const row = schema.find((a) => a.name === achievementId);
+        if (row) {
+          if (!achievementDescForRow && String(row.description ?? "").trim()) {
+            achievementDescForRow = String(row.description).trim();
+          }
+          if (titleMatchesGame && String(row.displayName ?? "").trim()) {
+            achievementNameForRow = String(row.displayName).trim();
+          }
+        }
+      }
+    }
+
     await insertMarket({
       market_address: marketAddress,
       creator_steam_id: session.steamId,
       streamer_steam_id: streamerSteamId,
-      streamer_name: streamerName || null,
-      game_name: gameName || null,
-      game_app_id: gameAppId || null,
+      streamer_name: streamerForRow,
+      streamer_avatar_url:
+        typeof streamerAvatarUrl === "string" && streamerAvatarUrl.trim()
+          ? streamerAvatarUrl.trim()
+          : null,
+      game_name: gameForRow,
+      game_app_id: Number.isFinite(appIdNum) && appIdNum > 0 ? appIdNum : null,
       achievement_id: achievementId,
-      achievement_name: achievementName || achievementId,
-      achievement_description: achievementDescription || null,
+      achievement_name: achievementNameForRow,
+      achievement_description: achievementDescForRow,
       deadline,
       total_yes_sol: totalYesSol || 0,
       total_no_sol: totalNoSol || 0,

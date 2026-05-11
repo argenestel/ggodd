@@ -3,9 +3,9 @@
 import { useState } from "react";
 import { useSolanaWallet } from "@/components/wallet/wallet-provider";
 import { Loader2, TrendingUp, TrendingDown, Wallet } from "lucide-react";
-import { AnchorProvider, BN } from "@coral-xyz/anchor";
-import { PublicKey, SystemProgram, Transaction } from "@solana/web3.js";
-import { findBetPda, findEscrowPda, getConnection, getProgram, solToLamports } from "@/lib/solana";
+import { BN } from "@coral-xyz/anchor";
+import { PublicKey, SystemProgram, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { buildPlaceBetInstructionData, findBetPda, findEscrowPda, getConnection, PROGRAM_ID, solToLamports } from "@/lib/solana";
 
 interface Props {
   marketAddress: string;
@@ -42,28 +42,20 @@ export function BetPanel({ marketAddress, onBetPlaced }: Props) {
       const [escrowPda] = findEscrowPda(marketPk);
       const [betPda] = findBetPda(marketPk, userPk);
 
-      const walletAdapter = {
-        publicKey: userPk,
-        signTransaction,
-        signAllTransactions,
-      } as any;
-
-      const provider = new AnchorProvider(connection, walletAdapter, { commitment: "confirmed" });
-      const program = getProgram(provider);
-
-      const sideArg = side === "yes" ? { yes: {} } : { no: {} };
       const amountLamports = new BN(solToLamports(solAmount));
+      const ixData = buildPlaceBetInstructionData(side, amountLamports);
 
-      const ix = await (program as any).methods
-        .placeBet(sideArg, amountLamports)
-        .accounts({
-          user: userPk,
-          market: marketPk,
-          escrow: escrowPda,
-          bet: betPda,
-          systemProgram: SystemProgram.programId,
-        })
-        .instruction();
+      const ix = new TransactionInstruction({
+        keys: [
+          { pubkey: userPk, isSigner: true, isWritable: true },
+          { pubkey: marketPk, isSigner: false, isWritable: true },
+          { pubkey: escrowPda, isSigner: false, isWritable: true },
+          { pubkey: betPda, isSigner: false, isWritable: true },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+        ],
+        programId: PROGRAM_ID,
+        data: ixData,
+      });
 
       const tx = new Transaction().add(ix);
       tx.feePayer = userPk;
@@ -74,6 +66,16 @@ export function BetPanel({ marketAddress, onBetPlaced }: Props) {
         preflightCommitment: "confirmed",
       });
       await connection.confirmTransaction({ signature: txSignature, ...bh }, "confirmed");
+
+      const txDetails = await connection.getParsedTransaction(txSignature, {
+        commitment: "confirmed",
+        maxSupportedTransactionVersion: 0,
+      });
+      if (txDetails?.meta?.err) {
+        throw new Error(
+          `Transaction landed but failed on-chain: ${JSON.stringify(txDetails.meta.err)}`
+        );
+      }
 
       const res = await fetch("/api/bets", {
         method: "POST",

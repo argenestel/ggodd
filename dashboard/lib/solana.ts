@@ -53,3 +53,48 @@ export function findBetPda(market: PublicKey, user: PublicKey): [PublicKey, numb
     PROGRAM_ID
   );
 }
+
+export const CREATE_MARKET_DISCRIMINATOR = Buffer.from([
+  103, 226, 97, 235, 200, 188, 251, 254,
+]);
+export const PLACE_BET_DISCRIMINATOR = Buffer.from([
+  222, 62, 67, 220, 63, 166, 126, 33,
+]);
+
+function encodeBorshString(s: string): Buffer {
+  const buf = Buffer.from(s, "utf-8");
+  const len = Buffer.alloc(4);
+  len.writeUInt32LE(buf.length, 0);
+  return Buffer.concat([len, buf]);
+}
+
+export function buildCreateMarketInstructionData(
+  streamerSteamId: string,
+  achievementId: string,
+  achievementName: string,
+  achievementDescription: string,
+  deadline: BN,
+  streamerFeeRecipient: PublicKey
+): Buffer {
+  return Buffer.concat([
+    CREATE_MARKET_DISCRIMINATOR,
+    encodeBorshString(streamerSteamId),
+    encodeBorshString(achievementId),
+    encodeBorshString(achievementName),
+    encodeBorshString(achievementDescription),
+    deadline.toArrayLike(Buffer, "le", 8),
+    streamerFeeRecipient.toBuffer(),
+  ]);
+}
+
+export function buildPlaceBetInstructionData(
+  side: "yes" | "no",
+  amountLamports: BN
+): Buffer {
+  const sideByte = side === "yes" ? 0 : 1;
+  return Buffer.concat([
+    PLACE_BET_DISCRIMINATOR,
+    Buffer.from([sideByte]),
+    amountLamports.toArrayLike(Buffer, "le", 8),
+  ]);
+}

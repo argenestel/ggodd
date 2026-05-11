@@ -11,13 +11,14 @@ import {
   Swords,
   Gamepad2,
   User,
-  Zap,
 } from "lucide-react";
+import { achievementCardBlurb, gameHeadline, streamerHeadline } from "@/lib/market-labels";
 
 interface Market {
   id: number;
   market_address: string;
   streamer_name: string | null;
+  streamer_avatar_url?: string | null;
   streamer_steam_id: string;
   game_name: string | null;
   game_app_id: number | null;
@@ -36,6 +37,7 @@ export function MarketCard({ market }: { market: Market }) {
   const noPct = 100 - yesPct;
   const deadlineDate = new Date(market.deadline * 1000);
   const isExpired = Date.now() > market.deadline * 1000;
+  const gameLabel = gameHeadline(market.game_name, market.game_app_id);
 
   return (
     <motion.div
@@ -45,24 +47,32 @@ export function MarketCard({ market }: { market: Market }) {
       {/* Top: Streamer + Game */}
       <div className="flex items-center gap-3 border-b border-[var(--border)] bg-[var(--bg)]/40 px-4 py-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--bg-elevated)] ring-1 ring-[var(--border)]">
-          <User className="h-5 w-5 text-[var(--text-tertiary)]" />
+          {market.streamer_avatar_url ? (
+            <img
+              src={market.streamer_avatar_url}
+              alt=""
+              className="h-10 w-10 rounded-lg object-cover"
+            />
+          ) : (
+            <User className="h-5 w-5 text-[var(--text-tertiary)]" />
+          )}
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-sm font-bold tracking-wide">
-            {market.streamer_name || market.streamer_steam_id}
+            {streamerHeadline(market.streamer_name, market.streamer_steam_id)}
           </p>
           <div className="mt-0.5 flex items-center gap-1.5">
-            {market.game_name ? (
-              <>
-                <Gamepad2 className="h-3 w-3 text-[var(--accent)]" />
-                <span className="truncate text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
-                  {market.game_name}
-                </span>
-              </>
-            ) : (
+            {gameLabel === "Unknown Game" ? (
               <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-tertiary)]">
                 Unknown Game
               </span>
+            ) : (
+              <>
+                <Gamepad2 className="h-3 w-3 text-[var(--accent)]" />
+                <span className="truncate text-[10px] font-bold uppercase tracking-wider text-[var(--accent)]">
+                  {gameLabel}
+                </span>
+              </>
             )}
           </div>
         </div>
@@ -74,14 +84,10 @@ export function MarketCard({ market }: { market: Market }) {
         <div className="flex items-start gap-2">
           <Swords className="mt-0.5 h-4 w-4 shrink-0 text-[var(--accent)]" />
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold leading-snug tracking-wide">
-              {market.achievement_name}
-            </h3>
-            {market.achievement_description && (
-              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
-                {market.achievement_description}
-              </p>
-            )}
+            <h3 className="text-sm font-semibold leading-snug tracking-wide">{market.achievement_name}</h3>
+            <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--text-secondary)]">
+              {achievementCardBlurb(market.achievement_description, market.achievement_name)}
+            </p>
           </div>
         </div>
       </div>
